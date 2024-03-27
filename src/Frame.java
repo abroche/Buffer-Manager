@@ -8,19 +8,30 @@ public class Frame {
     private boolean pinned;
     private int blockId;
 
-    private int recordSize;
+    private final int recordSize = 40;
 
     public Frame(){
 
     }
 
-    public void initialize(){
-
+    public void initialize(byte[] content, boolean dirty, boolean pinned, int blockId){
+        setContent(content);
+        setDirty(dirty);
+        setPinned(pinned);
+        setBlockId(blockId);
     }
 
 
     public String getRecord(int recordNumber){
-        return "1";
+        int start = (recordNumber-1) * recordSize;
+
+        byte[] recordBytes = new byte[recordSize];
+
+        System.arraycopy(getContent(), start, recordBytes, 0, recordSize);
+
+        String recordContent = new String(recordBytes);
+
+        return recordContent;
     }
 
     public void updateRecord(int recordNumber, String newContent){

@@ -15,4 +15,25 @@ public class BufferPool {
     public void initialize(){
 
     }
+
+    public int isInBufferPool(int blockId){
+        return -1;
+    }
+
+    public String getBlockContent(int blockId){
+        return "-1";
+    }
+
+    public void bringBlockToBuffer(){
+
+    }
+
+    public int getEmptyFrame(){
+        return -1;
+    }
+
+    public void returnBlockToDisk(){
+
+    }
+
 }
