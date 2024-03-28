@@ -1,42 +1,65 @@
+import java.util.Arrays;
+
 /**
  * Holds one file (one block)
  */
 public class Frame {
+    private int recordSize;
     private byte[] content;
 
     private boolean dirty;
     private boolean pinned;
     private int blockId;
 
-    private final int recordSize = 40;
 
     public Frame(){
-
-    }
-
-    public void initialize(byte[] content, boolean dirty, boolean pinned, int blockId){
-        setContent(content);
-        setDirty(dirty);
-        setPinned(pinned);
-        setBlockId(blockId);
     }
 
 
+    /**
+     * Initializes a Frame
+     */
+    public void initialize(){
+        content = new byte[100*recordSize];
+        dirty = false;
+        pinned = false;
+        blockId = -1;
+        recordSize = 40;
+    }
+
+
+    /**
+     * Gets the specified record
+     * @param recordNumber
+     * @return
+     */
     public String getRecord(int recordNumber){
-        int start = (recordNumber-1) * recordSize;
+        int start = ((recordNumber-1)%100) * recordSize; //start location
 
         byte[] recordBytes = new byte[recordSize];
 
         System.arraycopy(getContent(), start, recordBytes, 0, recordSize);
 
-        String recordContent = new String(recordBytes);
-
-        return recordContent;
+        return new String(recordBytes);
     }
 
+
+    /**
+     * Replaces the content of the specified record
+     * @param recordNumber
+     * @param newContent is a string of 40 bytes
+     */
     public void updateRecord(int recordNumber, String newContent){
-        //change the dirty flag as well
+        int start = ((recordNumber-1)%100) * recordSize; //start location
+
+        byte[] newBytes = newContent.getBytes();
+
+        for (int i = 0; i < newBytes.length && i < recordSize; i++) {
+            content[start + i] = newBytes[i];
+        }
+        setDirty(true);
     }
+
 
     public boolean isDirty() {
         return dirty;
@@ -71,4 +94,13 @@ public class Frame {
     }
 
 
+    @Override
+    public String toString() {
+        return "Frame{" +
+                //"content=" + Arrays.toString(content) +
+                "dirty=" + dirty +
+                ", pinned=" + pinned +
+                ", blockId=" + blockId +
+                '}';
+    }
 }
