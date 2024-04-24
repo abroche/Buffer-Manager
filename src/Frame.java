@@ -36,9 +36,11 @@ public class Frame {
     public String getRecord(int recordNumber){
         int start = ((recordNumber-1)%100) * recordSize; //start location
 
+        // byte array of size recordSize
         byte[] recordBytes = new byte[recordSize];
 
-        System.arraycopy(getContent(), start, recordBytes, 0, recordSize);
+
+
 
         return new String(recordBytes);
     }

@@ -6,11 +6,11 @@ o Section I: section on how to compile and execute your code. Include clear easy
 step by step that TAs can follow
 
 1. Run the program
-2. Program will ask to input the buffer size
+2. Program will take the buffer size from argv.
 3. Afterwards, the program will be ready for the next command. All commands are case insensitive (e.g., get == GET)
    IMPORTANT: You MUST input the record number/blockId with the command! For example, do "get 3" instead of just "get". Same with other commands.
     3.1 GET k
-            For example, you can do "get 1". Otherwise it will throw an error.
+            For example, you can do "get 1". Otherwise it won't like it.
     3.2 SET k <string of 40 bytes>
             You can do "set <record number> <40 byte string>. Assumes the string is of 40 bytes.
     3.3 PIN blockId
@@ -37,12 +37,19 @@ BufferPool Class:
 
                                             private int bufferLen; //number of slots in the buffer pool
 
-    - implemented additional method:       toString() method //formats the object to print to console
+    - implemented additional method:        toString() method //formats the object to print to console
+
+                                            findSlot() // Finds an available slot in the buffer pool
+
+                                            loadFrame() // Loads a frame into the buffer pool
+
+                                            setLastEvicted() //updates the lastEvicted
+
+                                            getEmptyFrame()
+
+                                            getUnpinnedFrame() //gets an unpinned frame
 
 
-
-    - design decision: the GET method returns the record as a String, but doesn't print to console inside the function.
-                       I printed the result of GET to the console.
 
 Frame Class:
     - implemented additional variable:      private int recordSize; //size of the record

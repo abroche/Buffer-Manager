@@ -37,22 +37,19 @@ public class BufferPool {
      * Unpins the specified block
      * @param blockId
      */
-    public void UNPIN(int blockId) {
+    public String UNPIN(int blockId) {
         int slot = isInBufferPool(blockId);
 
         if (slot != -1) { //already in the buffer pool
             if (buffers[slot].isPinned()) {
                 buffers[slot].setPinned(false);
+                return "File " + blockId + " is unpinned in frame "+ (slot+1) +"; Frame "+ (slot+1) +" was not already unpinned";
             } else {
-                System.out.println("Pinned flag was already false");
+                return "File "+blockId+" in frame "+(slot+1)+" is unpinned; Frame was already unpinned";
             }
-
-            System.out.println("Frame #" + (slot + 1) + " was unpinned");
         } else { // not in memory
-            System.out.println("“The corresponding block <" + blockId + "> cannot be unpinned because it is not in memory");
+            return ("The corresponding block " + blockId + " cannot be unpinned because it is not in memory.");
         }
-
-
     }
 
 
@@ -60,25 +57,25 @@ public class BufferPool {
      * Pins the block on the buffer pool
      * @param blockId
      */
-    public void PIN(int blockId) {
+    public String PIN(int blockId) {
         int slot = isInBufferPool(blockId);
-
         if (slot != -1) { //already in the buffer pool
             if (!buffers[slot].isPinned()) {
                 buffers[slot].setPinned(true);
+                return "File " + blockId + " pinned in Frame " + (slot+1) + "; Not already pinned";
             } else {
-                System.out.println("Pinned flag was already true");
+                return "File " + blockId + " pinned in Frame " + (slot+1) + "; Already pinned";
             }
         } else { // not in memory
             int emptySlot = getEmptyFrame();
-            int unpinnedSlot = getUnpinnedFrame();
-            if (emptySlot != -1 || unpinnedSlot != -1) { //there is an empty frame or there is an unpinned slot
-                GET(blockId * 100); //bring to memory
-                slot = isInBufferPool(blockId);
+            int[] res = loadFrame(blockId);
+            if (res[0] != -1) { //there is an empty frame or there is an unpinned slot
+                slot = res[1]; //frame it was placed in
+                int id =  res[2]; //id that was evicted
                 buffers[slot].setPinned(true);
-                System.out.println("Frame #" + (slot + 1) + " was pinned");
+                return "File " + blockId + " pinned in Frame " + (slot+1) + "; Not already pinned; Evicted file " + id + " from Frame " + (slot+1);
             } else {
-                System.out.println("The corresponding block <" + blockId + "> cannot be pinned because the memory buffers are full");
+                return "The corresponding block " + blockId + " cannot be pinned because the memory buffers are full";
             }
         }
 
@@ -90,27 +87,32 @@ public class BufferPool {
      * @param recordNumber is the specified record to be changed
      * @param newContent is a string of 40 bytes to update the record with
      */
-    public void SET(int recordNumber, String newContent) {
+    public String SET(int recordNumber, String newContent) {
         int fileNumber = Math.ceilDiv(recordNumber, 100);
-
         int slot = isInBufferPool(fileNumber);
 
         if (slot == -1) { //not in memory
-            String res = GET(recordNumber); //load from disk
-            if(!res.equals("-1")) { // if has been loaded successfully
-                slot = isInBufferPool(fileNumber);
+            int emptySlot = getEmptyFrame();
+            int[] res = loadFrame(fileNumber); //load from disk
+            if(res[0] != -1) { // if has been loaded successfully
+                slot = res[1]; //slot it was placed in
+                int evictId = res[2]; //block that was evicted
                 Frame setFrame = buffers[slot];
                 setFrame.updateRecord(recordNumber, newContent);
-                System.out.println("Write was successful");
                 setFrame.setDirty(true);
+                if(emptySlot != -1) {
+                    return "Write was successful; Brought File " + fileNumber + " from disk; Placed in Frame " + (slot + 1);
+                }
+                else {
+                    return "Write was successful; Brought File " + fileNumber + " from disk; Placed in Frame " + (slot + 1)+ "; Evicted file " + evictId + " from Frame " + (slot+1);
+                }
             }
+            return "The corresponding block #1 cannot be accessed from disk because the memory buffers are full; Write was unsuccessful";
         } else { // in memory
             buffers[slot].updateRecord(recordNumber, newContent);
-            System.out.println("Write was successful");
             buffers[slot].setDirty(true);
+            return "Write was successful; File "+fileNumber+" already in memory; Located in Frame "+ (slot+1);
         }
-
-
     }
 
     /**
@@ -120,51 +122,80 @@ public class BufferPool {
      */
 
     public String GET(int recordNumber) {
-
-
         int fileNumber = Math.ceilDiv(recordNumber, 100);
         int slot = isInBufferPool(fileNumber); // check if file is in the buffer pool
 
         if (slot != -1) { //is in memory
-            System.out.println("Block #" + fileNumber + " is already in memory in Frame #" + (slot + 1));
-            return "Record: " + buffers[slot].getRecord(recordNumber);
+            return buffers[slot].getRecord(recordNumber) + "; File " + fileNumber + " already in memory; Located in Frame " + (slot + 1);
         } else { //is not in memory
-            System.out.println("Block #" + fileNumber + " is not in memory.");
-            byte[] newContent = readFile(fileNumber).getBytes(); //copy new contents
             int emptySlot = getEmptyFrame();
-
-            if (emptySlot != -1) { //there is an empty frame
-                System.out.println("Found empty frame at Frame #" + (emptySlot + 1));
-                System.out.println("I/O was performed to bring the block to disk");
-                buffers[emptySlot].setContent(newContent);
-                buffers[emptySlot].setBlockId(fileNumber);
-                return "Record: " + buffers[emptySlot].getRecord(recordNumber);
-            } else { //no empty frames
-                int unpinnedSlot = getUnpinnedFrame();
-                if (unpinnedSlot != -1) { //there is an unpinned slot
-                    Frame frameToEvict = buffers[unpinnedSlot];
-                    if (!frameToEvict.isDirty()) { //if not dirty
-                        System.out.println("I/O was performed to bring the block to disk");
-                        frameToEvict.setContent(newContent); //just overwrite
-                    } else {
-                        //write file content back
-                        writeFile(frameToEvict.getBlockId(), frameToEvict.getContent());
-                        System.out.println("I/O was performed. Wrote Block #" + frameToEvict.getBlockId() + " to the disk before overwriting because dirty flag was true");
-                        //overwrite
-                        System.out.println("I/O was performed to bring the block to disk");
-                        frameToEvict.setContent(newContent);
-                        frameToEvict.setDirty(false);
-                    }
-                    frameToEvict.setBlockId(fileNumber);
-                    return "Record: " + buffers[unpinnedSlot].getRecord(recordNumber);
-
-                } else { // no unpinnable slots
-                    System.out.println("The corresponding block #" + fileNumber + " cannot be accessed from disk because the memory buffers are full.");
-                    return "-1";
-                }
+            int[] res = loadFrame(fileNumber);
+            if(res[0] == -1){ // no unpinnable slots
+                return "The corresponding block #" + fileNumber + " cannot be accessed from disk because the memory buffers are full";
             }
+            int unpinnedSlot = res[1]; // slot it was placed in
+            int evictedId = res[2]; // block that was evicted
+            if(emptySlot != -1){
+                return buffers[unpinnedSlot].getRecord(recordNumber) + "; Brought file " + fileNumber + " from disk; Placed in Frame " + (unpinnedSlot + 1);
+            }
+
+            return buffers[unpinnedSlot].getRecord(recordNumber) + "; Brought file " + fileNumber + " from disk; Placed in Frame " + (unpinnedSlot + 1) + "; Evicted file " + evictedId + " from frame " + (unpinnedSlot + 1);
+
         }
     }
+
+
+    /**
+     * Loads a frame into the buffer pool. This function assumes it is
+     * not in memory (i.e., does not check if the block is in memory)
+     * @param fileNumber is the blockId
+     * @return
+     */
+    public int[] loadFrame(int fileNumber) {
+        int[] res = new int[3];
+        int slot = findSlot(); // check if file is in the buffer pool
+
+        if(slot == -1){ //no available slot
+            res[0] = -1;
+            return res;
+        }
+
+        Frame frameToEvict = buffers[slot];
+        int evictedId = frameToEvict.getBlockId();
+
+
+        byte[] newContent = readFile(fileNumber).getBytes(); //copy new contents
+        if (frameToEvict.isDirty()) { // if it is dirty
+            //write file content back
+            writeFile(frameToEvict.getBlockId(), frameToEvict.getContent());
+            //overwrite
+            frameToEvict.setDirty(false);
+        }
+        frameToEvict.setContent(newContent);
+        frameToEvict.setBlockId(fileNumber);
+
+        res[0] = fileNumber;
+        res[1] = slot;
+        res[2] = evictedId;
+        return res;
+    }
+
+    /**
+     * Finds an available slot in the buffer pool
+     * @return the position of the slot
+     */
+    public int findSlot(){
+        int emptySlot = getEmptyFrame();
+        int unpinnedSlot = getUnpinnedFrame();
+        if (emptySlot != -1) { //there is an empty frame
+            return emptySlot;
+        }
+        else{
+            if(unpinnedSlot != -1){ setLastEvicted(unpinnedSlot); } // no empty frames but there is an unpinned slot
+            return unpinnedSlot; //-1 if no unpinned slots
+        }
+    }
+
 
     /**
      * Writes the new content to the file
@@ -172,7 +203,7 @@ public class BufferPool {
      * @param newContent the new content as a byte array
      */
     public void writeFile(int fileNumber, byte[] newContent) {
-        String filename = "Project1-Dataset/Project1/F" + fileNumber + "write.txt";
+        String filename = "Project1/F" + fileNumber + ".txt";
 
         try {
             FileWriter fileWriter = new FileWriter(filename);
@@ -194,7 +225,7 @@ public class BufferPool {
      * @return the contents of the file
      */
     public String readFile(int fileNumber) {
-        String filename = "Project1-Dataset/Project1/F" + fileNumber + ".txt";
+        String filename = "Project1/F" + fileNumber + ".txt";
         String blockContent = null;
         try {
             FileReader fileReader = new FileReader(filename);
@@ -206,7 +237,6 @@ public class BufferPool {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return blockContent;
     }
 
@@ -248,19 +278,19 @@ public class BufferPool {
      */
     public int getUnpinnedFrame() {
         int startFrame = (lastEvicted+1) % bufferLen;
-        System.out.println("Starting at: " + startFrame);
 
         for (int i = startFrame; i < bufferLen + startFrame; i++) {
             int idx = i % bufferLen;
-            System.out.println("Index: " + idx);
             if (!buffers[idx].isPinned()) {
-                lastEvicted = idx;
-                System.out.println("Last evicted: " + lastEvicted);
                 return idx;
             }
         }
-
         return -1;
+    }
+
+
+    public void setLastEvicted(int idx){
+        lastEvicted = idx;
     }
 
     @Override
