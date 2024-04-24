@@ -126,7 +126,7 @@ public class BufferPool {
      */
 
     public String GET(int recordNumber) {
-        int fileNumber = Math.ceilDiv(recordNumber, 100);
+        int fileNumber = ceilDiv(recordNumber, 100);
         int slot = isInBufferPool(fileNumber); // check if file is in the buffer pool
 
         if (slot != -1) { //is in memory
