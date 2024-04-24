@@ -1,6 +1,7 @@
 import java.io.*;
 import java.util.Arrays;
 
+
 /**
  * Represents the entire available buffer
  */
@@ -17,6 +18,7 @@ public class BufferPool {
 
     /**
      * Initializes the buffer pool
+     *
      * @param bufferSize
      */
     public void initialize(int bufferSize) {
@@ -35,6 +37,7 @@ public class BufferPool {
 
     /**
      * Unpins the specified block
+     *
      * @param blockId
      */
     public String UNPIN(int blockId) {
@@ -43,9 +46,9 @@ public class BufferPool {
         if (slot != -1) { //already in the buffer pool
             if (buffers[slot].isPinned()) {
                 buffers[slot].setPinned(false);
-                return "File " + blockId + " is unpinned in frame "+ (slot+1) +"; Frame "+ (slot+1) +" was not already unpinned";
+                return "File " + blockId + " is unpinned in frame " + (slot + 1) + "; Frame " + (slot + 1) + " was not already unpinned";
             } else {
-                return "File "+blockId+" in frame "+(slot+1)+" is unpinned; Frame was already unpinned";
+                return "File " + blockId + " in frame " + (slot + 1) + " is unpinned; Frame was already unpinned";
             }
         } else { // not in memory
             return ("The corresponding block " + blockId + " cannot be unpinned because it is not in memory.");
@@ -55,6 +58,7 @@ public class BufferPool {
 
     /**
      * Pins the block on the buffer pool
+     *
      * @param blockId
      */
     public String PIN(int blockId) {
@@ -62,18 +66,17 @@ public class BufferPool {
         if (slot != -1) { //already in the buffer pool
             if (!buffers[slot].isPinned()) {
                 buffers[slot].setPinned(true);
-                return "File " + blockId + " pinned in Frame " + (slot+1) + "; Not already pinned";
+                return "File " + blockId + " pinned in Frame " + (slot + 1) + "; Not already pinned";
             } else {
-                return "File " + blockId + " pinned in Frame " + (slot+1) + "; Already pinned";
+                return "File " + blockId + " pinned in Frame " + (slot + 1) + "; Already pinned";
             }
         } else { // not in memory
-            int emptySlot = getEmptyFrame();
             int[] res = loadFrame(blockId);
             if (res[0] != -1) { //there is an empty frame or there is an unpinned slot
                 slot = res[1]; //frame it was placed in
-                int id =  res[2]; //id that was evicted
+                int id = res[2]; //id that was evicted
                 buffers[slot].setPinned(true);
-                return "File " + blockId + " pinned in Frame " + (slot+1) + "; Not already pinned; Evicted file " + id + " from Frame " + (slot+1);
+                return "File " + blockId + " pinned in Frame " + (slot + 1) + "; Not already pinned; Evicted file " + id + " from Frame " + (slot + 1);
             } else {
                 return "The corresponding block " + blockId + " cannot be pinned because the memory buffers are full";
             }
@@ -84,39 +87,40 @@ public class BufferPool {
 
     /**
      * Sets the content of the record to the new content
+     *
      * @param recordNumber is the specified record to be changed
-     * @param newContent is a string of 40 bytes to update the record with
+     * @param newContent   is a string of 40 bytes to update the record with
      */
     public String SET(int recordNumber, String newContent) {
-        int fileNumber = Math.ceilDiv(recordNumber, 100);
+        int fileNumber = ceilDiv(recordNumber, 100);
         int slot = isInBufferPool(fileNumber);
 
         if (slot == -1) { //not in memory
             int emptySlot = getEmptyFrame();
             int[] res = loadFrame(fileNumber); //load from disk
-            if(res[0] != -1) { // if has been loaded successfully
+            if (res[0] != -1) { // if has been loaded successfully
                 slot = res[1]; //slot it was placed in
                 int evictId = res[2]; //block that was evicted
                 Frame setFrame = buffers[slot];
                 setFrame.updateRecord(recordNumber, newContent);
                 setFrame.setDirty(true);
-                if(emptySlot != -1) {
+                if (emptySlot != -1) {
                     return "Write was successful; Brought File " + fileNumber + " from disk; Placed in Frame " + (slot + 1);
-                }
-                else {
-                    return "Write was successful; Brought File " + fileNumber + " from disk; Placed in Frame " + (slot + 1)+ "; Evicted file " + evictId + " from Frame " + (slot+1);
+                } else {
+                    return "Write was successful; Brought File " + fileNumber + " from disk; Placed in Frame " + (slot + 1) + "; Evicted file " + evictId + " from Frame " + (slot + 1);
                 }
             }
             return "The corresponding block #1 cannot be accessed from disk because the memory buffers are full; Write was unsuccessful";
         } else { // in memory
             buffers[slot].updateRecord(recordNumber, newContent);
             buffers[slot].setDirty(true);
-            return "Write was successful; File "+fileNumber+" already in memory; Located in Frame "+ (slot+1);
+            return "Write was successful; File " + fileNumber + " already in memory; Located in Frame " + (slot + 1);
         }
     }
 
     /**
      * Gets the specified record
+     *
      * @param recordNumber is the record to be returned
      * @return the contents of the record
      */
@@ -130,12 +134,12 @@ public class BufferPool {
         } else { //is not in memory
             int emptySlot = getEmptyFrame();
             int[] res = loadFrame(fileNumber);
-            if(res[0] == -1){ // no unpinnable slots
+            if (res[0] == -1) { // no unpinnable slots
                 return "The corresponding block #" + fileNumber + " cannot be accessed from disk because the memory buffers are full";
             }
             int unpinnedSlot = res[1]; // slot it was placed in
             int evictedId = res[2]; // block that was evicted
-            if(emptySlot != -1){
+            if (emptySlot != -1) {
                 return buffers[unpinnedSlot].getRecord(recordNumber) + "; Brought file " + fileNumber + " from disk; Placed in Frame " + (unpinnedSlot + 1);
             }
 
@@ -148,6 +152,7 @@ public class BufferPool {
     /**
      * Loads a frame into the buffer pool. This function assumes it is
      * not in memory (i.e., does not check if the block is in memory)
+     *
      * @param fileNumber is the blockId
      * @return
      */
@@ -155,7 +160,7 @@ public class BufferPool {
         int[] res = new int[3];
         int slot = findSlot(); // check if file is in the buffer pool
 
-        if(slot == -1){ //no available slot
+        if (slot == -1) { //no available slot
             res[0] = -1;
             return res;
         }
@@ -182,16 +187,18 @@ public class BufferPool {
 
     /**
      * Finds an available slot in the buffer pool
+     *
      * @return the position of the slot
      */
-    public int findSlot(){
+    public int findSlot() {
         int emptySlot = getEmptyFrame();
         int unpinnedSlot = getUnpinnedFrame();
         if (emptySlot != -1) { //there is an empty frame
             return emptySlot;
-        }
-        else{
-            if(unpinnedSlot != -1){ setLastEvicted(unpinnedSlot); } // no empty frames but there is an unpinned slot
+        } else {
+            if (unpinnedSlot != -1) {
+                setLastEvicted(unpinnedSlot);
+            } // no empty frames but there is an unpinned slot
             return unpinnedSlot; //-1 if no unpinned slots
         }
     }
@@ -199,6 +206,7 @@ public class BufferPool {
 
     /**
      * Writes the new content to the file
+     *
      * @param fileNumber also the blockId
      * @param newContent the new content as a byte array
      */
@@ -221,6 +229,7 @@ public class BufferPool {
 
     /**
      * Reads the specified file
+     *
      * @param fileNumber the blockId that is meant to be read
      * @return the contents of the file
      */
@@ -243,6 +252,7 @@ public class BufferPool {
 
     /**
      * Determines whether blockId is in the buffer pool
+     *
      * @param blockId
      * @return slot number in the array holding this block otherwise -1
      */
@@ -258,6 +268,7 @@ public class BufferPool {
 
     /**
      * Gets location of empty frame
+     *
      * @return the slot of the empty frame
      */
     public int getEmptyFrame() {
@@ -274,10 +285,11 @@ public class BufferPool {
      * If the buffer pool is full, then check for unpinned frames
      * starting from the Frame following the last evicted frame
      * Works in a circular fashion
+     *
      * @return the slot of the removable frame
      */
     public int getUnpinnedFrame() {
-        int startFrame = (lastEvicted+1) % bufferLen;
+        int startFrame = (lastEvicted + 1) % bufferLen;
 
         for (int i = startFrame; i < bufferLen + startFrame; i++) {
             int idx = i % bufferLen;
@@ -289,7 +301,7 @@ public class BufferPool {
     }
 
 
-    public void setLastEvicted(int idx){
+    public void setLastEvicted(int idx) {
         lastEvicted = idx;
     }
 
@@ -299,4 +311,16 @@ public class BufferPool {
                 "buffers=" + Arrays.toString(buffers) +
                 '}';
     }
+
+    public static int ceilDiv(int dividend, int divisor) {
+        if (dividend < 0 && divisor > 0) {
+            return dividend / divisor;
+        } else if (dividend > 0 && divisor < 0) {
+            return dividend / divisor;
+        } else {
+            return (dividend + divisor - 1) / divisor;
+        }
+    }
+
+
 }

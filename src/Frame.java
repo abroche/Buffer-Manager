@@ -1,4 +1,3 @@
-import java.util.Arrays;
 
 /**
  * Holds one file (one block)
@@ -12,15 +11,15 @@ public class Frame {
     private int blockId;
 
 
-    public Frame(){
+    public Frame() {
     }
 
 
     /**
      * Initializes a Frame
      */
-    public void initialize(){
-        content = new byte[100*recordSize];
+    public void initialize() {
+        content = new byte[100 * recordSize];
         dirty = false;
         pinned = false;
         blockId = -1;
@@ -30,17 +29,17 @@ public class Frame {
 
     /**
      * Gets the specified record
+     *
      * @param recordNumber
      * @return
      */
-    public String getRecord(int recordNumber){
-        int start = ((recordNumber-1)%100) * recordSize; //start location
+    public String getRecord(int recordNumber) {
+        int start = ((recordNumber - 1) % 100) * recordSize; //start location
 
         // byte array of size recordSize
         byte[] recordBytes = new byte[recordSize];
 
-
-
+        System.arraycopy(getContent(), start, recordBytes, 0, recordSize);
 
         return new String(recordBytes);
     }
@@ -48,11 +47,12 @@ public class Frame {
 
     /**
      * Replaces the content of the specified record
+     *
      * @param recordNumber
-     * @param newContent is a string of 40 bytes
+     * @param newContent   is a string of 40 bytes
      */
-    public void updateRecord(int recordNumber, String newContent){
-        int start = ((recordNumber-1)%100) * recordSize; //start location
+    public void updateRecord(int recordNumber, String newContent) {
+        int start = ((recordNumber - 1) % 100) * recordSize; //start location
 
         byte[] newBytes = newContent.getBytes();
 

@@ -1,4 +1,3 @@
-import java.util.Arrays;
 import java.util.Scanner;
 
 public class Main {
@@ -9,17 +8,17 @@ public class Main {
         bufferPool.initialize(bufferSize);
 //        System.out.println(bufferPool);
 
-        while(true) {
+        while (true) {
             System.out.println("The program is ready for the next command: ");
             Scanner scanner = new Scanner(System.in);
             String input = scanner.nextLine();
 
-            if(input.equalsIgnoreCase("EXIT")){
+            if (input.equalsIgnoreCase("EXIT")) {
                 break;
             }
 
             String[] res = isValidCommand(input);
-            while(res == null){
+            while (res == null) {
                 System.out.println("Use commands: GET <record number>, SET <record number> <string of 40 bytes>, PIN <block id>, UNPIN <block id> or EXIT (input is case insensitive)");
                 System.out.println("The program is ready for the next command: ");
                 input = scanner.nextLine();
@@ -29,7 +28,6 @@ public class Main {
             String cmd = res[0];
             int num = Integer.parseInt(res[1]);
             String givenContent = res[2];
-
 
 
             //GET, SET, PIN, UNPIN
@@ -58,7 +56,7 @@ public class Main {
         }
     }
 
-    public static String[] isValidCommand(String input){
+    public static String[] isValidCommand(String input) {
         String[] parts = input.split(" ", 3);
         int len = parts.length;
         String[] res = new String[3];
@@ -68,17 +66,15 @@ public class Main {
             if it is the set command and it has only two parts then request for a new input
          */
 
-        if(len <= 1){
+        if (len <= 1) {
             return null;
-        }
-        else if(len == 2 && !parts[0].equalsIgnoreCase("SET")){ //valid get pin or unpin
+        } else if (len == 2 && !parts[0].equalsIgnoreCase("SET")) { //valid get pin or unpin
             String cmd = parts[0].toUpperCase();
             String num = parts[1];
             res[0] = cmd;
             res[1] = num;
             return res;
-        }
-        else if(len == 3 && parts[0].equalsIgnoreCase("SET")){ //valid set
+        } else if (len == 3 && parts[0].equalsIgnoreCase("SET")) { //valid set
             String cmd = parts[0].toUpperCase();
             String num = parts[1];
             String givenContent = parts[2].replace("\"", "");
