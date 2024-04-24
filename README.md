@@ -1,4 +1,5 @@
-# Buffer-Manager
+# CS4432 - Project 1
+## Implementing a Simplified Version of a DBMS Buffer Manager
 
 ### Project description:
 "In this project, you will learn and implement the key concepts of buffer management as done in database management
