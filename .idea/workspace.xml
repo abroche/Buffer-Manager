@@ -17,6 +17,9 @@
       </list>
     </option>
   </component>
+  <component name="Git.Merge.Settings">
+    <option name="BRANCH" value="origin/main" />
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
@@ -24,6 +27,9 @@
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
@@ -149,7 +155,7 @@
       <workItem from="1713159508810" duration="1724000" />
       <workItem from="1713358812318" duration="847000" />
       <workItem from="1713935761841" duration="1488000" />
-      <workItem from="1713964743113" duration="767000" />
+      <workItem from="1713964743113" duration="1099000" />
     </task>
     <task id="LOCAL-00001" summary="Project upload to GitHub">
       <option name="closed" value="true" />
